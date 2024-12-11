@@ -1,16 +1,13 @@
-import os
+import sys
 import socket
-import argparse
 import threading
-
-from pymupdf import message
 
 from muuttujat import *
 
 
 class Server(threading.Thread):
     def __init__(self):
-        super.__init__()
+        super().__init__()
         self.connections = []
 
     def run(self):
@@ -38,6 +35,7 @@ class Server(threading.Thread):
             print(f"Uusi yhteys havaittu: {sc.getpeername()}, {sc.getsockname()}")
 
             # Luodaan uusi säie ja ajetaan se.
+            server_socket = ServerSocket(sc, sockname, self)
             server_socket.start()
 
             # Lisätään socket-olio listaan
@@ -66,12 +64,12 @@ class ServerSocket(threading.Thread):
 
     def run(self):
         while True:
-            message = self.sc.recv(BUFFER_SIZE).decode('ascii')
+            msg = self.sc.recv(BUFFER_SIZE).decode('ascii')
 
             # Jos "message" löytyy, tulostetaan se näytölle ja lähetetään (broadcast) muille.
-            if message:
-                print(f"{self.sockname} lähetti viestin: {message}")
-                self.server.broadcast(message, self.sockname)
+            if msg:
+                print(f"{self.sockname} lähetti viestin: {msg}")
+                self.server.broadcast(msg, self.sockname)
             # Muussa tapauksessa tulostetaan ilmoitus.
             else:
                 print(f"{self.sockname} on sulkenut yhteyden.")
@@ -90,6 +88,17 @@ class ServerSocket(threading.Thread):
                 print("Suljetaan kaikki yhteydet")
                 for connection in self.server.connections:
                     connection.sc.close()
+                print("Suljetaan palvelinohjelma...")
+                sys.exit()
+
+
+
+if __name__ == "__main__":
+    server = Server()
+    server.start()
+
+    server_exit = threading.Thread(target=exit, args=(server,))
+    server_exit.start()
 
 
 
