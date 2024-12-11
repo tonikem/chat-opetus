@@ -1,6 +1,6 @@
 
-HOST = "127.0.0.1"
-PORT = 3200
+HOST = "0.0.0.0"
+PORT = 65530
 
 BUFFER_SIZE = 2048
 

@@ -2,11 +2,10 @@ import sys
 import socket
 import threading
 import tkinter as tk
-from platform import system
-
-from adbutils.pidcat import message
 
 from muuttujat import *
+
+CLIENT_ADDR = "172.22.224.1"  # TODO: muuta tämä!
 
 
 class Send(threading.Thread):
@@ -71,11 +70,11 @@ class Client:
 
     def start(self):
         # Katsotaan onnistuuko yhdistäminen..
-        print(f"Yritetään yhdistää; {HOST}:{PORT}...")
-        self.sock.connect((HOST, PORT))
+        print(f"Yritetään yhdistää; {CLIENT_ADDR}:{PORT}...")
+        self.sock.connect((CLIENT_ADDR, PORT))
 
         # Yhdistäminen onnistui!
-        print(f"Onnistuneesti yhdistetty; {HOST}:{PORT}\n")
+        print(f"Onnistuneesti yhdistetty; {CLIENT_ADDR}:{PORT}\n")
         self.name = input("Anna nimesi: ")
         print()
         print(f"Tervetuloa {self.name}!")
@@ -91,7 +90,67 @@ class Client:
         print("\rKaikki valmiina. Poistu chat-huoneesta kirjoittamalla \"exit\"")
         return receive
 
+    def send(self, text_input):
+        # Lähettää syötteen datan käyttöliittymän kautta.
+        msg = text_input.get()
+        text_input.delete(0, tk.END)
+        self.messages.insert(tk.END, f'{self.name}: {msg}')
+
+        # Kirjoita "exit" poistuaksesi chat-huoneesta.
+        if msg == 'exit':
+            self.sock.sendall(f"Palvelin: {self.name} on poistunut.".encode(ENCODING))
+            # Poistutaan chatista.
+            self.sock.close()
+            sys.exit(0)
+        else:
+            # Lähetetään viesti normaalisti.
+            self.sock.sendall(f"{self.name}: {msg}".encode(ENCODING))
+
+
+def main():
+    # Alustetaan ja ajetaan käyttöliittymä.
+    client = Client()
+    receive = client.start()
+
+    # Käyttöliittymä.
+    window = tk.Tk()
+    window.title("Chat app")
+    from_message = tk.Frame(master=window)
+    scroll_bar = tk.Scrollbar(master=from_message)
+    messages = tk.Listbox(master=from_message, yscrollcommand=scroll_bar.set)
+    scroll_bar.pack(side=tk.RIGHT, fill=tk.Y, expand=False)
+    messages.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+    # Käyttöliittymän kautta asetetaan viestit.
+    client.messages = messages
+    receive.messages = messages
+
+    # Asetellaan päänäkymä.
+    from_message.grid(row=0, column=0, columnspan=2, sticky="nsew")
+    from_entry = tk.Frame(master=window)
+    text_input = tk.Entry(master=from_entry)
+    text_input.pack(fill=tk.BOTH, expand=True)
+    text_input.bind("<Return>", lambda x: client.send(text_input))
+    text_input.insert(0, "")
+
+    # Nappi, jota painamalla viesti lähetetään
+    button_send = tk.Button(master=window, text="Lähetä", command=lambda: client.send(text_input))
+
+    from_entry.grid(row=1, column=0, padx=10, sticky="ew")
+    button_send.grid(row=1, column=1, pady=10, sticky="ew")
+
+    # Ikkunan rakenne kuvataan seuraavilla riveillä:
+    window.rowconfigure(0, minsize=500, weight=1)
+    window.rowconfigure(1, minsize=50, weight=0)
+    window.columnconfigure(0, minsize=500, weight=1)
+    window.columnconfigure(1, minsize=200, weight=0)
+
+    # Tärkein kooodi
+    window.mainloop()
+
+
 
 if __name__ == "__main__":
+    main()
 
 
