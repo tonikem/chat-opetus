@@ -36,7 +36,6 @@ class Server(threading.Thread):
             print(f"Uusi yhteys havaittu: {sc.getpeername()}, {sc.getsockname()}")
 
             # Luodaan uusi säie ja ajetaan se.
-            server_socket = ServerSocket(sc, sockname, self)
             server_socket.start()
 
             # Lisätään socket-olio listaan
