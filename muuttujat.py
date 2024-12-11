@@ -4,4 +4,6 @@ PORT = 3200
 
 BUFFER_SIZE = 2048
 
+ENCODING = "UTF-8"
+
 

@@ -30,12 +30,14 @@ class Server(threading.Thread):
         print("Listening at:", sock.getsockname())
 
         while True:
-            # Otetaan vastaan uusi socket-yhteys
+            # Otetaan vastaan uusi socket-yhteys. "sc" = socket connection
             sc, sockname = sock.accept()
             print(f"Uusi yhteys havaittu: {sc.getpeername()}, {sc.getsockname()}")
 
             # Luodaan uusi säie ja ajetaan se.
             server_socket = ServerSocket(sc, sockname, self)
+
+            # Käynnistetään socket-olio.
             server_socket.start()
 
             # Lisätään socket-olio listaan
@@ -55,18 +57,20 @@ class Server(threading.Thread):
         self.connections.remove(connection)
 
 
+# Listaan lisättävän socket-olion luokka.
 class ServerSocket(threading.Thread):
-    def __init__(self, sc, sockname, server):
+    def __init__(self, sc, sockname, _server):
         super().__init__()
         self.sc = sc
         self.sockname = sockname
-        self.server = server
+        self.server = _server
 
     def run(self):
         while True:
-            msg = self.sc.recv(BUFFER_SIZE).decode('ascii')
+            # "BUFFER_SIZE" selitettynä: https://www.baeldung.com/cs/buffer
+            msg = self.sc.recv(BUFFER_SIZE).decode(ENCODING)
 
-            # Jos "message" löytyy, tulostetaan se näytölle ja lähetetään (broadcast) muille.
+            # Jos "msg" löytyy, tulostetaan se näytölle ja lähetetään (broadcast) muille.
             if msg:
                 print(f"{self.sockname} lähetti viestin: {msg}")
                 self.server.broadcast(msg, self.sockname)
@@ -79,7 +83,8 @@ class ServerSocket(threading.Thread):
                                                     # joka on tallennettu listaan "self.connections"
 
     def send(self, msg):
-        self.sc.sendall(msg.encode('ascii'))
+        # Lähettää viestin.
+        self.sc.sendall(msg.encode(ENCODING))
 
     def exit(self):
         while True:
@@ -97,8 +102,8 @@ if __name__ == "__main__":
     server = Server()
     server.start()
 
-    server_exit = threading.Thread(target=exit, args=(server,))
-    server_exit.start()
+    #server_exit = threading.Thread(target=exit, args=(server,))
+    #server_exit.start()
 
 
 
