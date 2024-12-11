@@ -3,6 +3,8 @@ import socket
 import argparse
 import threading
 
+from pymupdf import message
+
 from muuttujat import *
 
 
@@ -52,8 +54,43 @@ class Server(threading.Thread):
                 connection.send(message)
 
     def remove_connection(self, connection):
+        # Poistetaan yhteysolio listasta.
         self.connections.remove(connection)
 
+
+class ServerSocket(threading.Thread):
+    def __init__(self, sc, sockname, server):
+        super().__init__()
+        self.sc = sc
+        self.sockname = sockname
+        self.server = server
+
+    def run(self):
+        while True:
+            message = self.sc.recv(BUFFER_SIZE).decode('ascii')
+
+            # Jos "message" löytyy, tulostetaan se näytölle ja lähetetään (broadcast) muille.
+            if message:
+                print(f"{self.sockname} lähetti viestin: {message}")
+                self.server.broadcast(message, self.sockname)
+            # Muussa tapauksessa tulostetaan ilmoitus.
+            else:
+                print(f"{self.sockname} on sulkenut yhteyden.")
+                self.sc.close()
+                self.server.remove_connection(self) # <- Tässä tarkkana:
+                                                    # "self" viittaa itse palvelimen olioon,
+                                                    # joka on tallennettu listaan "self.connections"
+
+    def send(self, msg):
+        self.sc.sendall(msg.encode('ascii'))
+
+    def exit(self):
+        while True:
+            user_input = input("")
+            if user_input == 'q':
+                print("Suljetaan kaikki yhteydet")
+                for connection in self.server.connections:
+                    connection.sc.close()
 
 
 
