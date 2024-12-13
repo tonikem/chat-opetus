@@ -48,6 +48,7 @@ class Receive(threading.Thread):
 
     def run(self):
         while True:
+            # "BUFFER_SIZE" selitettynä: https://youtu.be/ORsYkznN7Ss?si=jnqRhuanSm7PLr8s
             msg = self.sock.recv(BUFFER_SIZE).decode(ENCODING)
             if msg:
                 if self.messages:

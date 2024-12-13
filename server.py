@@ -67,7 +67,7 @@ class ServerSocket(threading.Thread):
 
     def run(self):
         while True:
-            # "BUFFER_SIZE" selitettynä: https://www.baeldung.com/cs/buffer
+            # "BUFFER_SIZE" selitettynä: https://youtu.be/ORsYkznN7Ss?si=jnqRhuanSm7PLr8s
             msg = self.sc.recv(BUFFER_SIZE).decode(ENCODING)
 
             # Jos "msg" löytyy, tulostetaan se näytölle ja lähetetään (broadcast) muille.
